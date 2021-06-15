@@ -1,0 +1,41 @@
+apply plugin: 'java'
+
+repositories {
+    mavenCentral()
+}
+
+configurations {
+    intTestImplementation.extendsFrom implementation
+    intTestRuntimeOnly.extendsFrom runtimeOnly
+}
+
+dependencies {
+    intTestImplementation 'junit:junit:4.12'
+}
+
+def myIntTest = sourceSets.register("intTest") {
+        it.compileClasspath += sourceSets.main.output
+        it.runtimeClasspath += sourceSets.main.output
+}
+
+def myTest = project.tasks.register("myIntTest", Test) {
+    group = 'verification'
+    description = 'Runs specific tests'
+
+    testClassesDirs = myIntTest.get().output.classesDirs
+    classpath = myIntTest.get().runtimeClasspath
+
+    outputs.upToDateWhen { false }
+}
+
+configurations {
+    binaryTestResultsElements {
+        canBeResolved = false
+        canBeConsumed = true
+        attributes {
+            attribute(Category.CATEGORY_ATTRIBUTE, objects.named(Category, Category.DOCUMENTATION))
+            attribute(DocsType.DOCS_TYPE_ATTRIBUTE, objects.named(DocsType, 'test-report-data'))
+        }
+        outgoing.artifact(myTest.get().binaryResultsDirectory)
+    }
+}
